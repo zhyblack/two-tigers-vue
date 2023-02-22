@@ -1,15 +1,7 @@
 <script setup>
-import {ref, reactive} from 'vue'
+import {ref, reactive, shallowRef} from 'vue'
 import {
-  Fold,
-  Expand,
-  UserFilled,
-  SwitchButton,
-  Setting,
-  User,
-  ArrowRight,
-  DataAnalysis,
-  Connection
+  Fold, Expand, UserFilled, SwitchButton, Setting, User, ArrowRight, House, List, Avatar, Operation, Tickets
 } from '@element-plus/icons-vue'
 import tigers from '@/assets/tigers.png'
 import {useStore} from 'vuex'
@@ -35,67 +27,106 @@ const logout = () => {
         loading.value = false
       })
 }
+const router = useRouter()
+const routes = router.getRoutes()
+console.log('routes = ', routes)
 
-const router = useRouter();
+const createBreadcrumbs = (routes, findId) => {
+  let breadcrumbs = []
+  for (let i = 0; i < routes.length; i++) {
+    if (routes[i].children.length > 0) {
+      let arr = createBreadcrumbs(routes[i].children, findId)
+      if (arr.length > 0) {
+        breadcrumbs.push(routes[i].name, ...arr)
+      }
+    }
+    if (routes[i].id === findId) {
+      breadcrumbs.push(routes[i].name)
+      return breadcrumbs
+    }
+  }
+  return breadcrumbs
+}
 
-console.log(router.options.routes)
+// console.log('store.getters.router = ', store.getters.router)
 
-const isCollapse = ref(false)
 const pageObj = reactive({
   logoSwitch: true,
   routes: router.options.routes,
+  asideWidth: 'auto',
+  isCollapse: false,
+  menus: store.getters.router,
+  defaultActive: router.currentRoute.value.meta.id + '',
+  breadcrumbs: createBreadcrumbs(routes, router.currentRoute.value.meta.id)
 })
+
+console.log('store.getters.router = ', store.getters.router)
 
 const to = (path) => {
   router.push(path)
+      .then(() => {
+        pageObj.breadcrumbs = createBreadcrumbs(routes, router.currentRoute.value.meta.id)
+      })
 }
+
+const icons = reactive({
+  'User': shallowRef(User) ,
+  'House': shallowRef(House),
+  'Setting': shallowRef(Setting),
+  'List': shallowRef(List),
+  'Avatar': shallowRef(Avatar),
+  'Operation': shallowRef(Operation),
+  'Tickets': shallowRef(Tickets),
+})
 
 </script>
 
 <template>
   <el-container class="layout-container" v-loading="loading">
-    <el-aside width="auto" style="border-right: 1px solid var(--el-border-color)">
+    <el-aside :width="pageObj.asideWidth" style="border-right: 1px solid var(--el-border-color)">
       <el-header v-show="pageObj.logoSwitch" class="layout-header">
         <img style="vertical-align: middle" width="32" height="32" :src="tigers">
       </el-header>
       <el-menu
-          default-active="1"
-          :collapse="isCollapse"
+          :default-active="pageObj.defaultActive"
+          :collapse="pageObj.isCollapse"
           class="layout-menu"
       >
-        <el-menu-item @click="to({path: '/dashboard'})" index="1">
-          <el-icon>
-            <DataAnalysis/>
-          </el-icon>
-          <span>DataAnalysis</span>
-        </el-menu-item>
-        <el-sub-menu index="2">
-          <template #title>
-            <el-icon>
-              <Setting/>
-            </el-icon>
-            <span>系统管理</span>
+        <template v-for="item in pageObj.menus" :key="item.id">
+          <template v-if="item.children.length > 1">
+            <el-sub-menu :index="item.id + ''">
+              <template #title>
+                <el-icon>
+                  <component :is="icons[item.icon]"></component>
+                </el-icon>
+                <span>{{ item.name }}</span>
+              </template>
+              <el-menu-item
+                  @click="to({path: item.pathStr + '/' + children.pathStr})"
+                  v-for="children in item.children" :index="children.id + ''" :key="children.id">
+                <el-icon>
+                  <component :is="icons[children.icon]"></component>
+                </el-icon>
+                {{ children.name }}
+              </el-menu-item>
+            </el-sub-menu>
           </template>
-          <el-menu-item @click="to({path: '/system/user'})" index="2-1">
-            <el-icon>
-              <User/>
-            </el-icon>
-            用户管理
-          </el-menu-item>
-          <el-menu-item @click="to({path: '/system/auth'})" index="3-1">
-            <el-icon>
-              <Connection/>
-            </el-icon>
-            权限管理
-          </el-menu-item>
-        </el-sub-menu>
+          <template v-else>
+            <el-menu-item @click="to({path: item.children[0].pathStr})" :index="item.children[0].id + ''">
+              <el-icon>
+                <component :is="icons[item.icon]"></component>
+              </el-icon>
+              <span>{{ item.name }}</span>
+            </el-menu-item>
+          </template>
+        </template>
       </el-menu>
     </el-aside>
     <el-container>
       <el-header class="layout-header" style="border-bottom: 1px solid var(--el-border-color);">
         <div style="float: left">
-          <el-button circle @click="isCollapse = !isCollapse" text bg>
-            <el-icon v-if="isCollapse">
+          <el-button circle @click="pageObj.isCollapse = !pageObj.isCollapse" text bg>
+            <el-icon v-if="pageObj.isCollapse">
               <Expand/>
             </el-icon>
             <el-icon v-else>
@@ -106,7 +137,7 @@ const to = (path) => {
         <div style="float: right;">
           <el-dropdown style="margin: 10px;">
             <span class="el-dropdown-link">
-              <el-avatar :icon="UserFilled" :src="tigers"/>
+              <el-avatar :icon="UserFilled"/>
             </span>
             <template #dropdown>
               <el-dropdown-menu>
@@ -128,7 +159,7 @@ const to = (path) => {
           <div style="margin-bottom: 20px">
             <el-breadcrumb :separator-icon="ArrowRight">
               <el-breadcrumb-item>/</el-breadcrumb-item>
-              <el-breadcrumb-item>DataAnalysis</el-breadcrumb-item>
+              <el-breadcrumb-item v-for="item in pageObj.breadcrumbs">{{ item }}</el-breadcrumb-item>
             </el-breadcrumb>
           </div>
           <router-view/>
@@ -143,6 +174,11 @@ const to = (path) => {
 </template>
 
 <style scoped>
+
+.layout-menu:not(.el-menu--collapse) {
+  width: 200px;
+  min-height: 400px;
+}
 
 .el-dropdown-link:focus {
   outline: none;

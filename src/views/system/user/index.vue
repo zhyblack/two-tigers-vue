@@ -1,38 +1,46 @@
 <script setup>
 import {onMounted, reactive, ref} from 'vue'
-import {Search, RefreshRight} from '@element-plus/icons-vue'
+import {Search, RefreshRight, Plus} from '@element-plus/icons-vue'
 import {table} from '@/api/user'
+import {ElMessage} from 'element-plus'
 
 const data = reactive({
-  loading: false,
+  loading: true,
   query: {
     title: '',
     page: 1,
     limit: 20,
   },
   total: 0,
-  list: []
+  list: [],
 })
 
 const form = ref()
 
 const reset = (form) => {
   form.resetFields()
+
+  ElMessage({type: 'success', message: `重置搜索表单成功。`,})
 }
 
 const search = () => {
-  data.loading = true
-  setTimeout(() => {
-    data.loading = false
-  }, 2000)
+  loadData()
 }
 
 const loadData = () => {
-  table(data.query).then(response => {
-    console.log(response)
-    data.total = response.data.total
-    data.list = response.data.items
-  })
+  data.loading = true
+  table(data.query)
+      .then(response => {
+        data.total = response.data.total
+        data.list = response.data.items
+        data.loading = false
+
+        ElMessage({type: 'success', message: `数据载入成功。一共${data.total}条数据。`,})
+      })
+}
+
+const reloadTable = () => {
+  loadData()
 }
 
 onMounted(loadData)
@@ -46,20 +54,26 @@ onMounted(loadData)
     </el-form-item>
     <el-form-item>
       <el-button-group>
-        <el-button v-loading.fullscreen.lock="data.loading" type="primary" @click="search">
+        <el-button v-loading.fullscreen.lock="data.loading" @click="search">
           <el-icon>
             <Search/>
           </el-icon>
         </el-button>
-        <el-button type="primary" @click="reset(form)">
+        <el-button @click="reset(form)">
           <el-icon>
             <RefreshRight/>
           </el-icon>
         </el-button>
       </el-button-group>
     </el-form-item>
+    <el-form-item>
+      <el-button-group>
+        <el-button :icon="Plus" />
+        <el-button @click="reloadTable" :icon="RefreshRight" />
+      </el-button-group>
+    </el-form-item>
   </el-form>
-  <el-table :data="data.list" style="width: 100%">
+  <el-table v-loading="data.loading" :data="data.list" style="width: 100%">
     <el-table-column prop="id" label="id"/>
     <el-table-column prop="uuid" label="uuid"/>
     <el-table-column prop="username" label="username"/>

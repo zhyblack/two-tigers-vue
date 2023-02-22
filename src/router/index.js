@@ -4,58 +4,59 @@ import NProgress from 'nprogress'
 import 'nprogress/nprogress.css'
 import store from '@/store'
 
-const layout = () => import('@/layout/index.vue')
-
 const whiteList = ['/login']
 
 const router = createRouter({
     history: createWebHashHistory(),
     routes: [{
-        path: '/',
-        component: layout,
-        redirect: '/dashboard',
-        children: [{
-            path: '/dashboard',
-            component: () => import('@/views/dashboard/index.vue')
-        }]
-    }, {
-        path: '/system',
-        component: layout,
-        children: [{
-            path: 'user',
-            component: () => import('@/views/system/user/index.vue')
-        }, {
-            path: 'role',
-            component: () => import('@/views/system/role/index.vue')
-        }, {
-            path: 'auth',
-            component: () => import('@/views/system/auth/index.vue')
-        }, {
-            path: 'config',
-            component: () => import('@/views/system/config/index.vue')
-        }]
-    }, {
         path: '/login',
         component: () => import('@/views/login/index.vue')
     }]
 })
 
+const modules = import.meta.glob('@/views/**')
+
+const routesCreate = (routes) => {
+    for (let i = 0; i < routes.length; i++) {
+        let r = routes[i]
+        r.meta = {
+            ...r
+        }
+        if (r.redirectStr) {
+            r.redirect = r.redirectStr
+        }
+        r.path = r.pathStr
+        if (r.componentStr === 'layout') {
+            r.component = () => import('@/layout/index.vue')
+        } else {
+            r.component = modules[`/src/views/${r.componentStr}.vue`]
+        }
+        if (r.children.length > 0) {
+            routesCreate(r.children)
+        }
+        if (r.authType === 1) {
+            r.children = []
+        }
+        if (r.pid === 0) {
+            router.addRoute(r)
+        }
+    }
+}
+
 router.beforeEach(async (to, from, next) => {
     NProgress.start()
-    console.log("to = ", to)
-    console.log("from = ", from)
     const token = getToken()
-    console.log("token = ", token)
     if (token) {
         if (to.path === '/login') {
             next({path: '/'})
         } else {
-            try {
-                const res = await store.dispatch('userInfo')
-                console.log(res)
+            if (store.getters.router.length > 0) {
                 next()
-            } catch (e) {
-
+            } else {
+                const response = await store.dispatch('userInfo')
+                store.commit('SetRouter', JSON.parse(JSON.stringify(response.routes)))
+                routesCreate(response.routes)
+                next({...to, replace: true})
             }
         }
     } else {
@@ -67,9 +68,8 @@ router.beforeEach(async (to, from, next) => {
     }
 })
 
-console.log('roter init')
-
 router.afterEach(() => {
     NProgress.done()
 })
+
 export default router
