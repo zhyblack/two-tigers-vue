@@ -1,10 +1,10 @@
 import axios from "@/utils/request";
 
-export function table(query) {
+export function table(data) {
     return axios({
         url: '/auth/table',
         method: 'post',
-        data: query
+        data
     })
 }
 

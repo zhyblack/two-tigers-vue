@@ -7,11 +7,11 @@ export function userInfo() {
     })
 }
 
-export function table(query) {
+export function table(data) {
     return axios({
         url: '/user/table',
         method: 'post',
-        data: query
+        data
     })
 }
 
