@@ -2,7 +2,7 @@
 import {reactive, onMounted, ref} from 'vue'
 import {Search, Plus, Edit, Delete, Setting, List, RefreshRight} from '@element-plus/icons-vue'
 import {ElMessage} from 'element-plus'
-import {dictTable, create, update, remove, listTable, listCreate} from '@/api/dict'
+import {dictTable, create, update, remove, listTable, listCreate, listUpdate} from '@/api/dict'
 
 const pageData = reactive({
   dictTable: {
@@ -78,12 +78,20 @@ const searchDictTable = () => {
   loadDictTableData()
 }
 
-const dictTableSizeChange = () => {
+const dictTableSizeChange = (limit) => {
   ElMessage('dictTableSizeChange')
+  pageData.dictTable.query.limit = limit
+  const maxPage = Math.ceil(pageData.dictTable.total / limit);
+  if (maxPage < pageData.dictTable.query.page) {
+    pageData.dictTable.query.page = maxPage
+  }
+  loadDictTableData()
 }
 
-const dictTableCurrentChange = () => {
+const dictTableCurrentChange = (page) => {
   ElMessage('dictTableCurrentChange')
+  pageData.dictTable.query.page = page
+  loadDictTableData()
 }
 
 const closeDictDialog = () => {
@@ -95,6 +103,7 @@ const closeDictDialog = () => {
 const closeListDialog = () => {
   // resetListForm()
   pageData.listTable.listDialog = false
+  resetListForm()
   ElMessage('取消了操作。')
 }
 
@@ -145,16 +154,20 @@ const handleDictEdit = (index, row) => {
 }
 
 const updateDict = (dictForm) => {
-  pageData.dictTable.fullscreen = true
-  update(pageData.dictTable.form)
-      .then((res) => {
-        pageData.dictTable.dictAddDialog = false
-        resetForm()
-        ElMessage({message: res.msg, type: 'success',})
-      })
-      .finally(() => {
-        pageData.dictTable.fullscreen = false
-      })
+  dictForm.validate((valid) => {
+    if (valid) {
+      pageData.dictTable.fullscreen = true
+      update(pageData.dictTable.form)
+          .then((res) => {
+            pageData.dictTable.dictAddDialog = false
+            resetForm()
+            ElMessage({message: res.msg, type: 'success',})
+          })
+          .finally(() => {
+            pageData.dictTable.fullscreen = false
+          })
+    }
+  })
   // dictForm.resetFields()
 }
 
@@ -192,12 +205,20 @@ const reloadDictTable = () => {
   loadDictTableData()
 }
 
-const handleListTableSizeChange = () => {
+const handleListTableSizeChange = (limit) => {
   ElMessage('handleListTableSizeChange')
+  pageData.listTable.query.limit = limit
+  const maxPage = Math.ceil(pageData.listTable.total / limit);
+  if (maxPage < pageData.listTable.query.page) {
+    pageData.listTable.query.page = maxPage
+  }
+  loadListTableData()
 }
 
-const handleListTableCurrentChange = () => {
+const handleListTableCurrentChange = (page) => {
   ElMessage('handleListTableCurrentChange')
+  pageData.listTable.query.page = page
+  loadListTableData()
 }
 
 const searchListTable = () => {
@@ -244,6 +265,16 @@ const submitAddList = (listForm) => {
 
 const updateList = (listForm) => {
   ElMessage('updateList')
+  pageData.listTable.fullscreen = true
+  listUpdate(pageData.listTable.form)
+      .then((res) => {
+        pageData.listTable.listDialog = false
+        resetListForm()
+        ElMessage({message: res.msg, type: 'success',})
+      })
+      .finally(() => {
+        pageData.listTable.fullscreen = false
+      })
 }
 
 const loadListTableData = () => {
@@ -266,7 +297,10 @@ const loadListTableData = () => {
 
 const handleListEdit = (index, row) => {
   ElMessage('handleListEdit')
-  
+  pageData.listTable.listDialog = true
+  pageData.listTable.title = '编辑字典'
+  pageData.listTable.type = 2
+  pageData.listTable.form = row
 }
 
 const handleListDelete = (index, row, flag) => {

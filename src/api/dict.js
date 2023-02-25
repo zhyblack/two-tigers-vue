@@ -1,5 +1,13 @@
 import axios from '@/utils/request'
 
+export function listUpdate(data) {
+    return axios({
+        url: '/dict_list/update',
+        method: 'post',
+        data
+    })
+}
+
 export function listCreate(data) {
     return axios({
         url: '/dict_list/create',
