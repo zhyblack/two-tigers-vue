@@ -4,6 +4,7 @@ import {
   Search, RefreshRight, Plus, Check, Close, Setting, Edit, Delete, User, House, List, Avatar, Operation, Tickets
 } from '@element-plus/icons-vue'
 import {table, save, update, remove} from '@/api/auth'
+import {listTypes} from '@/api/dict'
 import {ElMessage} from 'element-plus'
 import store from "@/store";
 
@@ -13,17 +14,14 @@ const data = reactive({
     name: '',
     page: 1,
     limit: 20,
+    authType: '',
   },
   addPermission: store.getters.permissionVerification('system:auth:add'),
   editPermission: store.getters.permissionVerification('system:auth:edit'),
   delPermission: store.getters.permissionVerification('system:auth:remove'),
   total: 0,
   list: [],
-  authTypes: {
-    '0': '目录',
-    '1': '菜单',
-    '2': '按钮',
-  },
+  authTypes: [],
   dialog: {
     formLoading: false,
     visible: false,
@@ -215,8 +213,27 @@ const icons = reactive({
   'Tickets': shallowRef(Tickets),
 })
 
+const loadDictList = () => {
+  listTypes({code: 'auth_type'})
+      .then(res => {
+        data.authTypes = res.data
+      })
+}
+
+const dictListType = (types, value) => {
+  let label = ''
+  types.forEach((e, i) => {
+    if (e.value === value + '') {
+      label = e.name
+      return false
+    }
+  })
+  return label
+}
+
 onMounted(() => {
   loadData()
+  loadDictList()
 })
 
 </script>
@@ -227,6 +244,12 @@ onMounted(() => {
       <el-form ref="form" :inline="true" :model="data.query" style="transform: 10%">
         <el-form-item class="form-item-auth" prop="name">
           <el-input v-model="data.query.name" placeholder="name"/>
+        </el-form-item>
+        <el-form-item class="form-item-auth" prop="authType">
+          <el-select v-model="data.query.authType" placeholder="authType">
+            <el-option label="authType" value=""/>
+            <el-option v-for="type in data.authTypes" :label="type.name" :value="type.value"/>
+          </el-select>
         </el-form-item>
         <el-form-item class="form-item-auth">
           <el-button-group>
@@ -263,7 +286,7 @@ onMounted(() => {
       </el-table-column>
       <el-table-column prop="authType" label="authType">
         <template #default="scope">
-          {{ data.authTypes[scope.row.authType + ''] }}
+          {{ dictListType(data.authTypes, scope.row.authType) }}
         </template>
       </el-table-column>
       <el-table-column v-if="data.addPermission || data.editPermission || data.delPermission" align="center">

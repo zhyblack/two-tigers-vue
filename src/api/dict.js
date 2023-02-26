@@ -1,5 +1,13 @@
 import axios from '@/utils/request'
 
+export function listTypes(data) {
+    return axios({
+        url: '/dict_list/types',
+        method: 'post',
+        data
+    })
+}
+
 export function listUpdate(data) {
     return axios({
         url: '/dict_list/update',

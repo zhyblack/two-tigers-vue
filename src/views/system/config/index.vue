@@ -158,22 +158,20 @@ onMounted(() => {
 <template>
   <el-card>
     <template #header>
-      <div>
-        <el-form :inline="true" :model="pageData.table.query">
-          <el-form-item class="form-item">
-            <el-input v-model="pageData.table.query.name" placeholder="name"/>
-          </el-form-item>
-          <el-form-item class="form-item">
-            <el-button :loading="pageData.table.loading" @click="search" :icon="Search"></el-button>
-          </el-form-item>
-          <el-form-item class="form-item">
-            <el-button-group>
-              <el-button @click="addConfig" :icon="Plus"></el-button>
-              <el-button :loading="pageData.table.loading" :icon="RefreshRight" @click="reloadTable"/>
-            </el-button-group>
-          </el-form-item>
-        </el-form>
-      </div>
+      <el-form :inline="true" :model="pageData.table.query">
+        <el-form-item class="form-item">
+          <el-input v-model="pageData.table.query.name" placeholder="name"/>
+        </el-form-item>
+        <el-form-item class="form-item">
+          <el-button :loading="pageData.table.loading" @click="search" :icon="Search"></el-button>
+        </el-form-item>
+        <el-form-item class="form-item">
+          <el-button-group>
+            <el-button @click="addConfig" :icon="Plus"></el-button>
+            <el-button :loading="pageData.table.loading" :icon="RefreshRight" @click="reloadTable"/>
+          </el-button-group>
+        </el-form-item>
+      </el-form>
     </template>
     <el-table v-loading="pageData.table.loading" :data="pageData.table.list" style="width: 100%">
       <el-table-column prop="id" label="id"/>
@@ -201,6 +199,7 @@ onMounted(() => {
         </template>
       </el-table-column>
     </el-table>
+
     <el-pagination
         v-model:current-page="pageData.table.query.page"
         v-model:page-size="pageData.table.query.limit"
