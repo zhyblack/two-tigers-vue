@@ -239,7 +239,7 @@ onMounted(() => {
 </script>
 
 <template>
-  <el-card shadow="always">
+  <el-card>
     <template #header>
       <el-form ref="form" :inline="true" :model="data.query" style="transform: 10%">
         <el-form-item class="form-item-auth" prop="name">

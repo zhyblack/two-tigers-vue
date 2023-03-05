@@ -141,7 +141,6 @@ const handleDelete = (index, row, flag) => {
         .then(() => {
           pageData.table.list.splice(index, 1)
           pageData.table.total -= 1
-          pageData.table.loading = false
         })
         .finally(() => {
           pageData.table.loading = false
