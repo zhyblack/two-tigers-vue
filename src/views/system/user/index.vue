@@ -174,6 +174,7 @@ const toRoles = (row) => {
   roles({userId: row.id})
       .then(res => {
         data.roleDialog.roles = res.data.roles
+        data.roleDialog.form.roles = res.data.haves
       })
       .finally(() => {
         data.roleDialog.roleLoading = false
@@ -189,12 +190,15 @@ const submitRole = (roleForm) => {
   console.log(data.roleDialog.form)
   roleForm.validate((valid) => {
     if (valid) {
+      data.fullscreen = true
       userRoles(data.roleDialog.form)
           .then(res => {
             data.roleDialog.show = false
+            data.roleDialog.form.roles = []
+            ElMessage({message: res.msg, type: 'success',})
           })
           .finally(() => {
-
+            data.fullscreen = false
           })
     }
   })

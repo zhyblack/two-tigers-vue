@@ -1,8 +1,8 @@
 <script setup>
 import {reactive, onMounted, ref} from 'vue'
-import {Search, Plus, Refresh, Setting, Edit, Delete} from '@element-plus/icons-vue'
+import {Search, Plus, Refresh, Setting, Edit, Delete, Connection} from '@element-plus/icons-vue'
 import {ElMessage} from 'element-plus'
-import {table, create, update, remove} from '@/api/role'
+import {table, create, update, remove, authTree, setAuth} from '@/api/role'
 
 const data = reactive({
   table: {
@@ -33,10 +33,23 @@ const data = reactive({
     },
     fullscreen: false,
   },
+  authDialog: {
+    fullscreen: false,
+    auths: [],
+    show: false,
+    authLoading: false,
+    form: {
+      roleId: 0,
+      auths: [],
+    },
+    authTreeData: [],
+    keys: [],
+  }
 })
 
 const queryForm = ref()
 const dialogForm = ref()
+const authTreeDom = ref()
 
 const search = () => {
   ElMessage('search')
@@ -160,6 +173,58 @@ const updateData = (dialogForm) => {
   })
 }
 
+const toAuths = (row) => {
+  ElMessage('toAuths')
+  data.authDialog.show = true
+  data.authDialog.form.roleId = row.id
+  data.authDialog.authLoading = true
+  authTree({roleId: row.id})
+      .then(res => {
+        console.log(res.data.tree)
+        data.authDialog.authTreeData = res.data.tree
+        data.authDialog.keys = res.data.haveIds
+      })
+      .finally(() => {
+        data.authDialog.authLoading = false
+      })
+}
+
+const submitAuth = (authTreeDom) => {
+  ElMessage('submitAuth')
+  let nodes = authTreeDom.getCheckedNodes()
+  // console.log(nodes)
+  if (nodes.length < 1) {
+    ElMessage({message: '请选择权限', type: 'warning',})
+  } else {
+    let authIds = []
+    nodes.forEach((e, i) => {
+      // console.log(e)
+      authIds.push(e.id)
+    })
+    // console.log(authIds)
+    data.authDialog.fullscreen = true
+    setAuth({roleId: data.authDialog.form.roleId, authIds})
+        .then(res => {
+          data.authDialog.show = false
+          ElMessage({message: res.msg, type: 'success',})
+        })
+        .finally(() => {
+          data.authDialog.fullscreen = false
+        })
+  }
+}
+
+const handleCloseAuthDialog = () => {
+  ElMessage('handleCloseAuthDialog')
+  data.authDialog.show = false
+  data.authDialog.keys = []
+}
+
+const checkChange = (node, flag, tree) => {
+  ElMessage('checkChange')
+  // console.log(node, flag, tree)
+}
+
 onMounted(() => {
   loadTableData()
 })
@@ -197,6 +262,7 @@ onMounted(() => {
         <template #default="scope">
           <el-button-group>
             <el-button size="small" @click="handleEdit(scope.$index, scope.row)" :icon="Edit"/>
+            <el-button size="small" :icon="Connection" @click="toAuths(scope.row)"/>
             <el-popconfirm
                 title="确定要删除这条数据？此操作不可以逆。"
                 confirm-button-type="danger"
@@ -247,6 +313,28 @@ onMounted(() => {
         <el-button
             v-loading.fullscreen.lock="data.dialog.fullscreen" type="primary"
             @click="data.dialog.type === 1 ? submit(dialogForm) : updateData(dialogForm)">确定</el-button>
+      </span>
+    </template>
+  </el-dialog>
+
+  <el-dialog
+      v-model="data.authDialog.show"
+      title="权限"
+      width="30%"
+      :before-close="handleCloseAuthDialog"
+  >
+    <el-card v-loading="data.authDialog.authLoading">
+      <el-tree
+          ref="authTreeDom" node-key="id" :default-checked-keys="data.authDialog.keys"
+          :data="data.authDialog.authTreeData" show-checkbox :props="{children: 'children', label: 'label'}"
+          @check-change="checkChange"/>
+    </el-card>
+    <template #footer>
+      <span class="dialog-footer">
+        <el-button @click="handleCloseAuthDialog">取消</el-button>
+        <el-button
+            v-loading.fullscreen.lock="data.authDialog.fullscreen"
+            type="primary" @click="submitAuth(authTreeDom)">确认</el-button>
       </span>
     </template>
   </el-dialog>

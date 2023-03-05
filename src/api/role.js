@@ -1,5 +1,21 @@
 import axios from "@/utils/request";
 
+export function setAuth(data) {
+    return axios({
+        url: '/role/setAuth',
+        method: 'post',
+        data
+    })
+}
+
+export function authTree(data) {
+    return axios({
+        url: '/role/authTree',
+        method: 'post',
+        data
+    })
+}
+
 export function remove(data) {
     return axios({
         url: '/role/remove',
